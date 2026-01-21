@@ -73,7 +73,7 @@ http://localhost:8080/swagger-ui.html
 
 La colección está disponible en la siguiente ubicacion:
 
-1. **Carpeta documentation:** `documentation/postman/Orders Batch Service API - Complete.postman_collection.json`
+1. **Carpeta documentation:** `documentation/postman/`
 
 **Pasos para importar:**
 
