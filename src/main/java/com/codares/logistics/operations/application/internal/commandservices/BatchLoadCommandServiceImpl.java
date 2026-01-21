@@ -1,7 +1,5 @@
 package com.codares.logistics.operations.application.internal.commandservices;
 
-import java.util.Optional;
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,23 +55,7 @@ public class BatchLoadCommandServiceImpl implements BatchLoadCommandService {
      */
     private final BatchLoadRepository batchLoadRepository;
 
-    /**
-     * Busca un BatchLoad existente por clave de idempotencia y hash.
-     * <p>
-     * Usado para verificar si un archivo ya fue procesado previamente.
-     * </p>
-     *
-     * @param idempotencyKey clave de idempotencia
-     * @param fileHash hash del archivo
-     * @return Optional con el BatchLoad si existe
-     */
-    public Optional<BatchLoad> findByIdempotencyKeyAndFileHash(String idempotencyKey, String fileHash) {
-        return batchLoadRepository.findByIdempotencyKeyAndFileHash(
-            new IdempotencyKey(idempotencyKey),
-            new FileHash(fileHash)
-        );
-    }
-
+    
     /**
      * Paso 1: Inicia la carga y reserva la idempotencia.
      * <p>

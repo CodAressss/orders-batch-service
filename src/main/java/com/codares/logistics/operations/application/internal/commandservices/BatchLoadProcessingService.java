@@ -1,21 +1,23 @@
 package com.codares.logistics.operations.application.internal.commandservices;
 
-import java.util.List;
+import java.util.Optional;
 
+import com.codares.logistics.operations.domain.model.valueobjects.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.codares.logistics.operations.domain.model.aggregates.BatchLoad;
 import com.codares.logistics.operations.domain.model.commands.FailBatchLoadCommand;
 import com.codares.logistics.operations.domain.model.commands.FinalizeBatchLoadCommand;
 import com.codares.logistics.operations.domain.model.commands.InitiateBatchLoadCommand;
 import com.codares.logistics.operations.domain.model.commands.ProcessBatchCommand;
-import com.codares.logistics.operations.domain.model.valueobjects.BatchLoadStatus;
-import com.codares.logistics.operations.domain.model.valueobjects.BatchLoadSummary;
 import com.codares.logistics.operations.domain.ports.outbound.ExternalCatalogService;
 import com.codares.logistics.operations.domain.ports.outbound.ExternalOrdersService;
+import com.codares.logistics.operations.domain.services.BatchLoadCommandService;
 import com.codares.logistics.operations.domain.services.OrderProcessingDomainService;
 import com.codares.logistics.operations.domain.services.OrderProcessingDomainService.ProcessingResult;
 import com.codares.logistics.operations.domain.services.OrderProcessingDomainService.ValidationContext;
+import com.codares.logistics.operations.infrastructure.persistence.jpa.repositories.BatchLoadRepository;
 import com.codares.logistics.shared.domain.exceptions.ResourceAlreadyExistsException;
 
 import lombok.RequiredArgsConstructor;
@@ -48,10 +50,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class BatchLoadProcessingService {
 
-    private final BatchLoadCommandServiceImpl batchLoadCommandService;
+// 1. CORRECCIÓN: Inyectar Interfaces y Repositorios, no Implementaciones
+    private final BatchLoadRepository batchLoadRepository; 
+    private final BatchLoadCommandService batchLoadCommandService; // Interfaz
     private final OrderProcessingDomainService orderProcessingDomainService;
-    private final ExternalCatalogService catalogService;
-    private final ExternalOrdersService ordersService;
+    private final ExternalCatalogService externalCatalogService;
+    private final ExternalOrdersService externalOrdersService;
 
     /**
      * Ejecuta el procesamiento completo del batch.
@@ -73,81 +77,84 @@ public class BatchLoadProcessingService {
      */
     @Transactional
     public BatchLoadSummary execute(ProcessBatchCommand command) {
-        log.info("Iniciando procesamiento batch: key={}, filas={}", 
-            command.idempotencyKey(), command.csvRows().size());
+        log.info("Iniciando procesamiento batch: key={}, filas={}",
+                command.idempotencyKey(), command.csvRows().size());
 
-        // FASE 1: Verificar idempotencia
-        var existingBatch = batchLoadCommandService.findByIdempotencyKeyAndFileHash(
-            command.idempotencyKey(), 
-            command.fileHash()
+        // FASE 1: Verificar idempotencia usando REPOSITORIO
+        var idempotencyKey = new IdempotencyKey(command.idempotencyKey());
+        var fileHash = new FileHash(command.fileHash());
+
+        Optional<BatchLoad> existingBatch = batchLoadRepository.findByIdempotencyKeyAndFileHash(
+                idempotencyKey, fileHash
         );
 
         if (existingBatch.isPresent()) {
             var batch = existingBatch.get();
             log.info("Batch ya procesado: id={}, status={}", batch.getId(), batch.getStatus());
-            
-            // Siempre lanzar excepción para idempotencia (409 CONFLICT)
+
             if (batch.getStatus() == BatchLoadStatus.COMPLETED) {
-                throw new ResourceAlreadyExistsException(
-                    "Este archivo ya fue procesado anteriormente"
+                return new BatchLoadSummary(
+                        batch.getId(),
+                        batch.getTotalProcessed(),
+                        batch.getSuccessCount(),
+                        batch.getErrorCount()
                 );
             }
-            
+
             throw new ResourceAlreadyExistsException(
-                "El archivo está siendo procesado actualmente"
+                    "El archivo está siendo procesado o ya existe con estado: " + batch.getStatus(),
+                    OperationsError.ARCHIVO_YA_PROCESADO
             );
         }
 
-        // FASE 2: Reservar procesamiento (INSERT atómico)
+        // FASE 2: Reservar procesamiento
         var batchLoad = batchLoadCommandService.handle(
-            new InitiateBatchLoadCommand(command.idempotencyKey(), command.fileHash())
+                new InitiateBatchLoadCommand(command.idempotencyKey(), command.fileHash())
         );
 
         try {
-            // FASE 3: Pre-cargar catálogos (evita N+1)
+            // FASE 3: Pre-cargar catálogos
             log.debug("Pre-cargando catálogos para validación");
             var validationContext = new ValidationContext(
-                catalogService.getAllActiveClientIds(),
-                catalogService.getZonesWithRefrigerationSupport(),
-                ordersService.getAllOrderNumbers()
+                    externalCatalogService.getAllActiveClientIds(),
+                    externalCatalogService.getZonesWithRefrigerationSupport(),
+                    externalOrdersService.getAllOrderNumbers()
             );
 
-            // FASE 4: Validar filas (Domain Service - lógica de negocio)
+            // FASE 4: Validar filas
             log.debug("Validando {} filas", command.csvRows().size());
             ProcessingResult result = orderProcessingDomainService.processRows(
-                command.csvRows(), 
-                validationContext
+                    command.csvRows(),
+                    validationContext
             );
 
-            // FASE 5: Persistir pedidos válidos en bloque
+            // FASE 5: Persistir pedidos válidos
             if (!result.validOrders().isEmpty()) {
                 log.debug("Persistiendo {} pedidos válidos", result.validOrders().size());
-                List<?> createdOrderIds = ordersService.createOrdersBatch(result.validOrders());
-                log.info("Pedidos creados: {}", createdOrderIds.size());
+                externalOrdersService.createOrdersBatch(result.validOrders());
             }
 
-            // FASE 6: Finalizar BatchLoad con resultados
+            // FASE 6: Finalizar BatchLoad
             batchLoad = batchLoadCommandService.handle(new FinalizeBatchLoadCommand(
-                batchLoad.getId(),
-                command.csvRows().size(),
-                result.validOrders().size(),
-                result.errors()
+                    batchLoad.getId(),
+                    command.csvRows().size(),
+                    result.validOrders().size(),
+                    result.errors()
             ));
 
-            log.info("Procesamiento completado: total={}, éxitos={}, errores={}", 
-                command.csvRows().size(), 
-                result.validOrders().size(), 
-                result.errors().size());
+            log.info("Procesamiento completado: total={}, éxitos={}, errores={}",
+                    command.csvRows().size(),
+                    result.validOrders().size(),
+                    result.errors().size());
 
             return new BatchLoadSummary(
-                batchLoad.getId(),
-                command.csvRows().size(),
-                result.validOrders().size(),
-                result.errors().size()
+                    batchLoad.getId(),
+                    command.csvRows().size(),
+                    result.validOrders().size(),
+                    result.errors().size()
             );
 
         } catch (Exception e) {
-            // Marcar como fallido en caso de error
             log.error("Error procesando batch: {}", e.getMessage(), e);
             batchLoadCommandService.handle(new FailBatchLoadCommand(batchLoad.getId()));
             throw e;
