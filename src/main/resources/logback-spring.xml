@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- ========================================
+         LOGBACK SPRING CONFIGURATION
+         Logs estructurados en JSON con CorrelationId
+         ======================================== -->
+
+    <!-- Importar configuración por defecto de Spring Boot -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    
+    <!-- Variable para nombre de la aplicación en logs -->
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+    <springProperty scope="context" name="springApplicationVersion" source="spring.application.version"/>
+    <springProperty scope="context" name="activeProfile" source="spring.profiles.active" defaultValue="default"/>
+
+    <!-- ========================================
+         PROPIEDADES DE LOGS
+         ======================================== -->
+    <!-- Ruta: ./logs/spring.log (en la raíz del proyecto, visible) -->
+    <property name="LOG_FILE" value="logs/spring.log"/>
+    <property name="LOG_FILE_MAX_SIZE" value="10MB"/>
+    <property name="LOG_FILE_MAX_HISTORY" value="30"/>
+
+    <!-- ========================================
+         APPENDERS (Destinos de logs)
+         ======================================== -->
+
+    <!-- 1. CONSOLA: Logs en formato JSON -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Campos personalizados mapeados automáticamente -->
+            
+            <!-- Campos personalizados en el JSON -->
+            <customFields>
+                {
+                    "application_name": "${springAppName}",
+                    "application_version": "${springApplicationVersion}",
+                    "environment": "${activeProfile}",
+                    "correlationId": "%X{correlationId}"
+                }
+            </customFields>
+
+            <!-- Incluir Stack Trace completo en caso de excepciones -->
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+                <shortenedClassNameLength>20</shortenedClassNameLength>
+                <exclude>sun\.reflect\..*</exclude>
+                <exclude>java\.lang\.reflect\..*</exclude>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <!-- 2. ARCHIVO: Logs en JSON a archivo con rotación -->
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Campos personalizados mapeados automáticamente -->
+            
+            <customFields>
+                {
+                    "application_name": "${springAppName}",
+                    "application_version": "${springApplicationVersion}",
+                    "environment": "${activeProfile}",
+                    "correlationId": "%X{correlationId}"
+                }
+            </customFields>
+
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+                <shortenedClassNameLength>20</shortenedClassNameLength>
+            </throwableConverter>
+        </encoder>
+
+        <!-- Rotación de archivos: por tamaño y por día -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>${LOG_FILE_MAX_SIZE}</maxFileSize>
+            <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ========================================
+         LOGGERS (Configuración por paquete)
+         ======================================== -->
+
+    <!-- Logger para aplicación (DEBUG en desarrollo, INFO en producción) -->
+    <logger name="com.codares.logistics" level="DEBUG"/>
+
+    <!-- Logger para Spring Framework (reducir ruido) -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.security" level="DEBUG"/>
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="TRACE"/>
+
+    <!-- Logger para Hibernate (DEBUG para ver SQLs) -->
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+
+    <!-- Logger para Spring Data -->
+    <logger name="org.springframework.data" level="DEBUG"/>
+
+    <!-- Logger para Spring Cloud Sleuth (importante para tracing) -->
+    <logger name="org.springframework.cloud.sleuth" level="DEBUG"/>
+
+    <!-- ========================================
+         ROOT LOGGER (Logger por defecto)
+         ======================================== -->
+    <root level="INFO">
+        <!-- Enviar logs a consola en formato JSON -->
+        <appender-ref ref="CONSOLE_JSON" />
+        
+        <!-- Enviar logs a archivo en formato JSON -->
+        <appender-ref ref="FILE_JSON" />
+    </root>
+
+    <!-- ========================================
+         PERFILES ESPECÍFICOS
+         ======================================== -->
+
+    <!-- Perfil DESARROLLO: Logs detallados en consola -->
+    <springProfile name="dev, development">
+        <logger name="com.codares.logistics" level="DEBUG"/>
+        <logger name="org.springframework" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql" level="TRACE"/>
+        
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE_JSON" />
+            <appender-ref ref="FILE_JSON" />
+        </root>
+    </springProfile>
+
+    <!-- Perfil PRODUCCIÓN: Logs restringidos a INFO -->
+    <springProfile name="prod, production">
+        <logger name="com.codares.logistics" level="INFO"/>
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+        
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON" />
+            <appender-ref ref="FILE_JSON" />
+        </root>
+    </springProfile>
+
+    <!-- Perfil TESTING: Solo errores -->
+    <springProfile name="test">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE_JSON" />
+        </root>
+    </springProfile>
+
+</configuration>

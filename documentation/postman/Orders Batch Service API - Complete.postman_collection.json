@@ -1,0 +1,480 @@
+{
+  "info": {
+    "_postman_id": "77b88765-2075-497a-956b-447edd6f9053",
+    "name": "Orders Batch Service API - Complete",
+    "description": "Colección completa con autenticación JWT y 3 datasets de prueba",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "33909711"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Sign Up - Registrar Usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response has userId', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"user\",\r\n    \"password\": \"user\",\r\n    \"roles\": [\r\n        \"ROLE_USER\"\r\n    ]\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/authentication/sign-up",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authentication",
+                "sign-up"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sign In - Obtener Token JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"user\",\r\n    \"password\": \"user\"\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/authentication/sign-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authentication",
+                "sign-in"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Batch Load - 3 Datasets",
+      "item": [
+        {
+          "name": "Load Dataset 1 - 150 Válidos (P001-P150)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All 150 records success', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalProcesados).to.equal(150);",
+                  "    pm.expect(jsonData.guardados).to.equal(150);",
+                  "    pm.expect(jsonData.conError).to.equal(0);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "batch-001-valid-150"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/F:/Projects_DDD/orders-batch-service/samples/dataset_validos_150.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/cargar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "cargar"
+              ]
+            },
+            "description": "Carga 150 pedidos válidos (P001-P150). Happy path - todos guardados sin errores."
+          },
+          "response": []
+        },
+        {
+          "name": "Load Dataset 2 - 100 Válidos (P151-P250)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All 100 records success', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalProcesados).to.equal(100);",
+                  "    pm.expect(jsonData.guardados).to.equal(100);",
+                  "    pm.expect(jsonData.conError).to.equal(0);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "batch-002-valid-100"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/F:/Projects_DDD/orders-batch-service/samples/dataset_validos_100.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/cargar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "cargar"
+              ]
+            },
+            "description": "Carga 100 pedidos adicionales (P151-P250). Continuación secuencial sin duplicados."
+          },
+          "response": []
+        },
+        {
+          "name": "Load Dataset 3 - 100 con Errores (E001-E100)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 (errors dont stop)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Contains business errors', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalProcesados).to.equal(100);",
+                  "    pm.expect(jsonData.conError).to.be.greaterThan(50);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "batch-003-errors-100"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/F:/Projects_DDD/orders-batch-service/samples/dataset_errores_100.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/cargar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "cargar"
+              ]
+            },
+            "description": "Carga 100 registros con errores de negocio intencionales:\n- E001-E010: Clientes inexistentes\n- E011-E020: Fechas pasadas\n- E021-E030: Zonas inválidas\n- E031-E060: Refrigeración no soportada\n- E061-E100: Válidos (línea base)\n\nResultado: ~40 guardados, ~60 errores"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Edge Cases & Security",
+      "item": [
+        {
+          "name": "Idempotencia - 409 Conflict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('Error indicates already processed', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var msg = jsonData.message || jsonData.error || '';",
+                  "    pm.expect(msg.toLowerCase()).to.include('procesado');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "batch-001-valid-150"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/F:/Projects_DDD/orders-batch-service/samples/dataset_validos_150.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/cargar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "cargar"
+              ]
+            },
+            "description": "Intenta cargar mismo archivo con misma key. MISMA Idempotency-Key que request anterior."
+          },
+          "response": []
+        },
+        {
+          "name": "Seguridad - Sin Authorization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "test-401"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/F:/Projects_DDD/orders-batch-service/samples/dataset_validos_150.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/cargar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "cargar"
+              ]
+            },
+            "description": "Intento sin token JWT - debe retornar 401"
+          },
+          "response": []
+        },
+        {
+          "name": "Validación - Sin Idempotency-Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/F:/Projects_DDD/orders-batch-service/samples/dataset_validos_150.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/cargar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "cargar"
+              ]
+            },
+            "description": "Falta header Idempotency-Key - debe retornar 400"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
