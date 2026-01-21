@@ -30,7 +30,7 @@ Sistema backend para la carga masiva de pedidos desde archivos CSV, con validaci
 ### 1️⃣ Clonar el repositorio
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/CodAressss/orders-batch-service
 cd orders-batch-service
 ```
 
@@ -40,11 +40,20 @@ Crear la base de datos:
 
 ```sql
 CREATE DATABASE orders_batch_db;
-CREATE USER postgres WITH PASSWORD 'B@ldeon18';
+CREATE USER postgres WITH PASSWORD 'coloca_tu_password';
 GRANT ALL PRIVILEGES ON DATABASE orders_batch_db TO postgres;
 ```
 
-> ⚠️ **Nota**: Ajusta las credenciales en `src/main/resources/application.properties` si usas valores diferentes.
+> ⚠️ **Nota**: Después de crear la base de datos, **edita el archivo `src/main/resources/application.properties`** y ajusta los siguientes parámetros según tu configuración local:
+> 
+> ```properties
+> spring.datasource.url=jdbc:postgresql://localhost:5432/orders_batch_db
+> spring.datasource.username=postgres
+> spring.datasource.password=tu_password_aqui
+> spring.datasource.driver-class-name=org.postgresql.Driver
+> ```
+> 
+> Reemplaza `tu_password_aqui` con la contraseña que configuraste para el usuario `postgres`. Si usas un puerto, host o nombre de base de datos diferente, ajusta la URL en consecuencia.
 
 ### 3️⃣ Ejecutar la aplicación
 
@@ -73,14 +82,14 @@ http://localhost:8080/swagger-ui.html
 
 La colección está disponible en la siguiente ubicacion:
 
-1. **Carpeta documentation:** `documentation/postman/Orders Batch Service API - Complete.postman_collection.json`
+1. **Carpeta documentation:** `documentation/postman/`
 
 **Pasos para importar:**
 
 1. Abre Postman
 2. Click en **Import** (arriba a la izquierda)
 3. Selecciona **Upload Files**
-4. Navega a `Orders Batch Service API - Complete.postman_collection.json` en la raíz del proyecto
+4. Navega a `Orders Batch Service API - Complete.postman_collection.json` en la siguiente carpeta `documentation/postman/`
 5. Click en **Import**
 
 #### Opción 2: Link Público (Vista Previa - Sin Archivos CSV)

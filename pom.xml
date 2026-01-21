@@ -38,9 +38,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/CodAress/orders-batch-service.git</connection>
-        <developerConnection>scm:git:ssh://github.com:CodAress/orders-batch-service.git</developerConnection>
-        <url>https://github.com/CodAress/orders-batch-service</url>
+        <connection>scm:git:git://github.com/CodAressss/orders-batch-service.git</connection>
+        <developerConnection>scm:git:ssh://github.com:CodAressss/orders-batch-service.git</developerConnection>
+        <url>https://github.com/CodAressss/orders-batch-service</url>
         <tag>HEAD</tag>
     </scm>
 

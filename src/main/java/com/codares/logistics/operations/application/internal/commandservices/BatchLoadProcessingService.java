@@ -50,7 +50,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class BatchLoadProcessingService {
 
-// 1. CORRECCIÓN: Inyectar Interfaces y Repositorios, no Implementaciones
     private final BatchLoadRepository batchLoadRepository; 
     private final BatchLoadCommandService batchLoadCommandService; // Interfaz
     private final OrderProcessingDomainService orderProcessingDomainService;
