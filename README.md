@@ -80,7 +80,7 @@ La colección está disponible en la siguiente ubicacion:
 1. Abre Postman
 2. Click en **Import** (arriba a la izquierda)
 3. Selecciona **Upload Files**
-4. Navega a `Orders Batch Service API - Complete.postman_collection.json` en la raíz del proyecto
+4. Navega a `Orders Batch Service API - Complete.postman_collection.json` en la siguiente carpeta `documentation/postman/Orders Batch Service API - Complete.postman_collection.json`
 5. Click en **Import**
 
 #### Opción 2: Link Público (Vista Previa - Sin Archivos CSV)
