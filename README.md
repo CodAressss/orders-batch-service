@@ -30,7 +30,7 @@ Sistema backend para la carga masiva de pedidos desde archivos CSV, con validaci
 ### 1️⃣ Clonar el repositorio
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/CodAressss/orders-batch-service
 cd orders-batch-service
 ```
 
@@ -40,7 +40,7 @@ Crear la base de datos:
 
 ```sql
 CREATE DATABASE orders_batch_db;
-CREATE USER postgres WITH PASSWORD 'B@ldeon18';
+CREATE USER postgres WITH PASSWORD 'coloca_tu_password';
 GRANT ALL PRIVILEGES ON DATABASE orders_batch_db TO postgres;
 ```
 
